@@ -20,82 +20,95 @@ IMAGE_NAME="dameng8-ubuntu22:latest"
 echo "🧹 清理构建目录..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
+# 1. 创建构建目录
+mkdir -p "$BUILD_DIR"
 
-# 2. 寻找安装包函数
-find_package() {
-    # 优先找当前目录下的 zip 或 iso
-    if [ -f "dm8.zip" ]; then echo "dm8.zip"; return 0; fi
-    if [ -f "DM8.zip" ]; then echo "DM8.zip"; return 0; fi
-    # 达梦官方文件名通常很长，这里用通配符查找
-    local file=$(ls dm8_*.zip 2>/dev/null | head -n 1)
-    if [ -n "$file" ]; then echo "$file"; return 0; fi
+# 2. 核心逻辑：检查是否已经解压好了 DMInstall.bin
+# 如果这个文件存在，说明我们已经准备好安装环境了，直接跳过下载和解压
+# 2. 核心逻辑：检测本地文件
+# 优先检测当前目录（与 Dockerfile 同级）是否有 DMInstall.bin
+if [ -f "./DMInstall.bin" ]; then
+    echo "✅ 发现本地已解压的安装文件 (./DMInstall.bin)，直接使用，跳过下载和解压。"
 
-    local iso=$(ls dm8_*.iso 2>/dev/null | head -n 1)
-    if [ -n "$iso" ]; then echo "$iso"; return 0; fi
+    # 直接复制到构建目录
+    # 注意：DMInstall.bin 通常位于 ISO 解压后的根目录
+    cp ./DMInstall.bin "$BUILD_DIR/"
 
-    return 1
-}
-
-# 3. 获取安装包 (本地查找 或 远程下载)
-PACKAGE_FILE=""
-
-if [ "$FORCE_DOWNLOAD" = false ]; then
-    PACKAGE_FILE=$(find_package) || true
-fi
-
-if [ -n "$PACKAGE_FILE" ]; then
-    echo "✅ 发现本地安装包: $PACKAGE_FILE"
+    # 如果还有其他必须的依赖文件（如 install 目录等），也建议在这里判断并复制
+    # 但通常达梦安装只需要 DMInstall.bin 和同级的一些 xml 文件
+    # 如果你是把整个 ISO 内容都解压出来了，建议复制整个目录结构，或者只复制必要的
 else
-    echo "⚠️ 本地未找到安装包，开始从远程下载..."
-    # 提取文件名
+    echo "⚠️ 未找到安装文件，开始准备下载和解压..."
+
+    # --- 下载阶段 ---
     PACKAGE_FILE=$(basename "$REMOTE_URL")
 
-    # 使用 curl 下载
-    if [ -f "$PACKAGE_FILE" ]; then
-        echo "文件已存在，跳过下载"
-    else
-        curl -v \
-             -L \
+    # 如果本地当前目录没有压缩包，则下载
+    if [ ! -f "$PACKAGE_FILE" ]; then
+        echo "📥 正在下载安装包..."
+        curl -L \
              -A "$FAKE_UA" \
              -e "$FAKE_REFERER" \
-             --compressed \
              -H "Connection: keep-alive" \
              -H "Accept: */*" \
              -H "Accept-Encoding: gzip, deflate, br" \
              -o "$PACKAGE_FILE" \
              "$REMOTE_URL"
+    else
+        echo "📦 本地已存在压缩包 $PACKAGE_FILE，跳过下载。"
     fi
 
-    # 简单校验文件大小 (防止下载了 HTML 错误页面)
-    if [ ! -s "$PACKAGE_FILE" ]; then
-        echo "❌ 下载失败：文件为空或不存在"
+    # --- 校验阶段 ---
+    # 检查下载的文件大小
+    if [ -f "$PACKAGE_FILE" ]; then
+        FILE_SIZE=$(stat -c%s "$PACKAGE_FILE" 2>/dev/null || stat -f%z "$PACKAGE_FILE") # 兼容 Linux/Mac
+        echo "🔍 下载文件校验中... 文件大小: $FILE_SIZE 字节"
+
+        # 如果文件小于 1MB (1048576 字节)，极有可能是下载失败（如 HTML 错误页）
+        if [ "$FILE_SIZE" -lt 1048576 ]; then
+            echo "❌ 错误：下载的文件过小 (< 1MB)，可能不是有效的安装包。"
+            echo "👇 以下是文件内容预览（用于调试）："
+            echo "--------------------------------"
+            # 使用 head 防止文件过大刷屏，cat 查看完整内容
+            head -n 50 "$PACKAGE_FILE"
+            echo "--------------------------------"
+            exit 1
+        fi
+    fi
+
+    # --- 解压阶段 ---
+    echo "📦 正在解压安装包到 $BUILD_DIR ..."
+
+    # 确保安装了 p7zip
+    if ! command -v 7z &> /dev/null; then
+        echo "❌ 错误：未找到 7z 命令，请安装 p7zip-full (sudo apt install p7zip-full)"
         exit 1
     fi
-    echo "✅ 下载完成: $PACKAGE_FILE"
-fi
 
-# 4. 解压安装包
-# 达梦安装通常需要 ISO 内的完整目录结构，所以我们把 ISO 内容解压出来
-echo "📦 正在解压安装包到 $BUILD_DIR ..."
+    if [[ "$PACKAGE_FILE" == *.zip ]]; then
+        # 处理 ZIP -> ISO -> 文件
+        echo "检测到 ZIP 格式，正在提取 ISO..."
+        unzip -q -o "$PACKAGE_FILE" "*.iso" -d /tmp/dm_temp_unzip
+        ISO_FILE=$(ls /tmp/dm_temp_unzip/*.iso 2>/dev/null | head -n 1)
 
-if [[ "$PACKAGE_FILE" == *.zip ]]; then
-    # 如果是 ZIP，先解压出 ISO，再解压 ISO
-    # 注意：这里假设 ZIP 里只有一个 ISO，或者我们只取第一个 ISO
-    unzip -q "$PACKAGE_FILE" "*.iso" -d /tmp/dm_temp_unzip
-    ISO_FILE=$(ls /tmp/dm_temp_unzip/*.iso | head -n 1)
+        if [ -z "$ISO_FILE" ]; then
+            echo "❌ 在 ZIP 包中未找到 ISO 文件"
+            exit 1
+        fi
 
-    # 解压 ISO 内容到构建目录
-    7z x "$ISO_FILE" -o"$BUILD_DIR" -y -q
+        echo "正在解压 ISO 内容..."
+        7z x "$ISO_FILE" -o"$BUILD_DIR" -y -q
+        rm -rf /tmp/dm_temp_unzip
 
-    # 清理临时文件
-    rm -rf /tmp/dm_temp_unzip
+    elif [[ "$PACKAGE_FILE" == *.iso ]]; then
+        # 直接解压 ISO
+        7z x "$PACKAGE_FILE" -o"$BUILD_DIR" -y -q
+    else
+        echo "❌ 不支持的文件格式: $PACKAGE_FILE"
+        exit 1
+    fi
 
-elif [[ "$PACKAGE_FILE" == *.iso ]]; then
-    # 如果是 ISO，直接解压
-    7z x "$PACKAGE_FILE" -o"$BUILD_DIR" -y -q
-else
-    echo "❌ 不支持的文件格式: $PACKAGE_FILE"
-    exit 1
+    echo "✅ 解压完成。"
 fi
 
 echo "✅ 解压完成，准备构建..."

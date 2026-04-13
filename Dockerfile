@@ -1,10 +1,10 @@
 # --- 阶段 1: 安装 ---
-FROM ubuntu:22.04 AS installer
+FROM ubuntu:resolute AS installer
 
 # 安装依赖
-RUN apt-get update && \
-    apt-get install -y sudo libaio1 && \
-    rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && \
+#    apt-get install -y sudo && \
+#    rm -rf /var/lib/apt/lists/*
 
 # 创建用户
 RUN groupadd dinstall -g 2001 && \
@@ -26,11 +26,11 @@ RUN echo "🔧 正在安装达梦数据库..." && \
     echo "✅ 安装完成。"
 
 # --- 阶段 2: 运行 ---
-FROM ubuntu:22.04
+FROM ubuntu:resolute
 
-RUN apt-get update && \
-    apt-get install -y sudo libaio1 && \
-    rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && \
+#    apt-get install -y sudo libaio1 && \
+#    rm -rf /var/lib/apt/lists/*
 
 RUN groupadd dinstall -g 2001 && \
     useradd -G dinstall -m -d /home/dmdba -s /bin/bash -u 2001 dmdba && \
