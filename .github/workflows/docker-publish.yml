@@ -50,14 +50,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 3. 构建和推送
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ env.IMAGE_NAME }}:latest
-          # 通过构建参数传入 URL 和 SHA256
-          build-args: |
-            DM_DOWNLOAD_URL=${{ env.DM_URL }}
-            DM_EXPECTED_SHA256=${{ env.DM_SHA256 }}
+      # 2. 安装依赖
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+
+      # 3. 执行你的 build.sh 并推送
+      - name: Build and Push via Script
+        run: |
+          # 给脚本传入 "push" 参数
+          ./build.sh push
