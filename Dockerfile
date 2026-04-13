@@ -31,23 +31,25 @@ FROM ubuntu:resolute
 # 安装运行时依赖
 RUN apt-get update && \
     (apt-get install -y libaio1 || apt-get install -y libaio1t64) && \
+    apt-get install -y sudo && \
     rm -rf /var/lib/apt/lists/*
 
 RUN groupadd dinstall -g 2001 && \
     useradd -G dinstall -m -d /home/dmdba -s /bin/bash -u 2001 dmdba && \
     chmod 777 /tmp
 
+# 复制启动脚本（在复制安装文件之前，确保一定存在）
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh && \
+    sed -i 's/\r$//' /entrypoint.sh
+
 # 复制安装好的程序
 COPY --from=installer /home/dmdba/ /home/dmdba/
 # 设置时区为中国
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
-# 复制启动脚本
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-USER root
-#WORKDIR /home/dmdba
+USER dmdba
+WORKDIR /home/dmdba
 
 ENV INSTANCE_NAME=instance
 ENV SYSDBA_PWD=SYSDBA001
