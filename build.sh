@@ -54,9 +54,14 @@ else
     if [ -f "$PACKAGE_FILE" ]; then
         echo "文件已存在，跳过下载"
     else
-        curl -L \
+        curl -v \
+             -L \
              -A "$FAKE_UA" \
              -e "$FAKE_REFERER" \
+             --compressed \
+             -H "Connection: keep-alive" \
+             -H "Accept: */*" \
+             -H "Accept-Encoding: gzip, deflate, br" \
              -o "$PACKAGE_FILE" \
              "$REMOTE_URL"
     fi
