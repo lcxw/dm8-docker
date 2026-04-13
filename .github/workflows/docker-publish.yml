@@ -55,7 +55,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y p7zip-full
-
+      - name: grant run permission
+        run: |
+          sudo chmod +x build.sh
       # 3. 执行你的 build.sh 并推送
       - name: Build and Push via Script
         run: |
