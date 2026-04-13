@@ -97,12 +97,12 @@ else
         fi
 
         echo "正在解压 ISO 内容..."
-        7z x "$ISO_FILE" -o"$BUILD_DIR" -y -q
+        7z x "$ISO_FILE" -o"$BUILD_DIR" -y
         rm -rf /tmp/dm_temp_unzip
 
     elif [[ "$PACKAGE_FILE" == *.iso ]]; then
         # 直接解压 ISO
-        7z x "$PACKAGE_FILE" -o"$BUILD_DIR" -y -q
+        7z x "$PACKAGE_FILE" -o"$BUILD_DIR" -y
     else
         echo "❌ 不支持的文件格式: $PACKAGE_FILE"
         exit 1

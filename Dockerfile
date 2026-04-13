@@ -2,9 +2,9 @@
 FROM ubuntu:resolute AS installer
 
 # 安装依赖
-#RUN apt-get update && \
-#    apt-get install -y sudo && \
-#    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y libaio1 || apt-get install -y libaio1t64 && \
+    rm -rf /var/lib/apt/lists/*
 
 # 创建用户
 RUN groupadd dinstall -g 2001 && \
@@ -28,16 +28,17 @@ RUN echo "🔧 正在安装达梦数据库..." && \
 # --- 阶段 2: 运行 ---
 FROM ubuntu:resolute
 
-#RUN apt-get update && \
-#    apt-get install -y sudo libaio1 && \
-#    rm -rf /var/lib/apt/lists/*
+# 安装运行时依赖
+RUN apt-get update && \
+    (apt-get install -y libaio1 || apt-get install -y libaio1t64) && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN groupadd dinstall -g 2001 && \
     useradd -G dinstall -m -d /home/dmdba -s /bin/bash -u 2001 dmdba && \
     chmod 777 /tmp
 
 # 复制安装好的程序
-COPY --from=installer /home/dmdba/dmdbms /home/dmdba/dmdbms
+COPY --from=installer /home/dmdba/dmdb /home/dmdba/dmdbms
 
 # 复制启动脚本
 COPY entrypoint.sh /entrypoint.sh
