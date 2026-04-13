@@ -38,14 +38,25 @@ RUN groupadd dinstall -g 2001 && \
     chmod 777 /tmp
 
 # 复制安装好的程序
-COPY --from=installer /home/dmdba/dmdb /home/dmdba/dmdbms
+COPY --from=installer /home/dmdba/ /home/dmdba/
+# 设置时区为中国
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 # 复制启动脚本
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-USER dmdba
-WORKDIR /home/dmdba
+USER root
+#WORKDIR /home/dmdba
 
-EXPOSE 5236
+ENV INSTANCE_NAME=instance
+ENV SYSDBA_PWD=SYSDBA001
+ENV PAGE_SIZE=32
+ENV CASE_SENSITIVE=1
+ENV UNICODE_FLAG=0
+
+ENV LENGTH_IN_CHAR=0
+
+EXPOSE 5236/tcp
+#CMD ["/bin/bash","/opt/startup.sh"]
 ENTRYPOINT ["/entrypoint.sh"]

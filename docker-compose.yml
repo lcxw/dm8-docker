@@ -1,0 +1,30 @@
+services:
+  dameng:
+    image: dameng8-ubuntu22
+    container_name: dameng8
+    privileged: false
+    restart: no
+    runtime: runc
+    ports:
+      - "5236:5236"
+    volumes:
+      - dm8_data:/opt/dmdbms/data
+    environment:
+      #      - 配置参考 https://eco.dameng.com/community/training/6e3229b02cf35a142766aebf8cdef19e
+      - INSTANCE_NAME=dm8db
+      - PAGE_SIZE=32
+      - EXTENT_SIZE=32
+      #      - LD_LIBRARY_PATH=C:/Program Files/Git/opt/dmdbms/bin
+      - LD_LIBRARY_PATH=/opt/dmdbms/bin
+      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - SYSDBA_PWD=SYSDBA001
+      #      - CASE_SENSITIVE=1 #1敏感，0不敏感
+      - CASE_SENSITIVE=1 #0不区分大小写，1区分大小写，2将所有表名转换为小写。
+      #      - UNICODE_FLAG=0
+      - CHARSET=1
+      - UNICODE_FLAG=1 #可选值：0[GB18030]，1[UTF-8]，2[EUC-KR]
+      - LENGTH_IN_CHAR=0
+#    networks:
+#      - zz-test
+volumes:
+  dm8_data:
