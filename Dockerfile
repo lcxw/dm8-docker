@@ -36,7 +36,9 @@ RUN apt-get update && \
 
 RUN groupadd dinstall -g 2001 && \
     useradd -G dinstall -m -d /home/dmdba -s /bin/bash -u 2001 dmdba && \
-    chmod 777 /tmp
+    chmod 777 /tmp && \
+    echo 'dmdba ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/dmdba && \
+    chmod 440 /etc/sudoers.d/dmdba
 
 # 复制启动脚本（在复制安装文件之前，确保一定存在）
 COPY entrypoint.sh /entrypoint.sh
@@ -51,13 +53,15 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 USER dmdba
 WORKDIR /home/dmdba
 
-ENV INSTANCE_NAME=instance
+ENV INSTANCE_NAME=DMSERVER
 ENV SYSDBA_PWD=SYSDBA001
+ENV SYSAUDITOR_PWD=SYSAUDITOR001
 ENV PAGE_SIZE=32
 ENV CASE_SENSITIVE=1
 ENV UNICODE_FLAG=0
-
 ENV LENGTH_IN_CHAR=0
+ENV DB_PATH=/home/dmdba/data
+ENV DMDB_INSTALL_PATH=/home/dmdba/dmdb
 
 EXPOSE 5236/tcp
 #CMD ["/bin/bash","/opt/startup.sh"]
