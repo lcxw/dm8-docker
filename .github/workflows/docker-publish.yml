@@ -1,0 +1,63 @@
+name: Build DM8 Docker Image
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # 允许手动触发
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/dameng-db # 修改为你想要的镜像名
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 1. 下载达梦安装包
+      - name: Download DM8 ZIP
+        id: download
+        run: |
+          DM_URL="https://download.dameng.com/eco/adapter/DM8/202512/dm8_20251203_x86_Ubuntu22_64.zip"
+          echo "Downloading from $DM_URL"
+          curl -L -o dm8.zip "$DM_URL"
+          
+          # 提取 SHA256 文件名（通常包含 SHA256.txt）
+          SHA256_FILE=$(unzip -Z1 dm8.zip | grep -i SHA256.txt)
+          if [ -z "$SHA256_FILE" ]; then
+            echo "ERROR: Cannot find SHA256 verification file in the ZIP."
+            exit 1
+          fi
+          
+          # 读取文件中的哈希值 (通常是: 哈希值 文件名)
+          HASH_VALUE=$(unzip -p dm8.zip "$SHA256_FILE" | awk '{print $1}')
+          echo "Extracted SHA256: $HASH_VALUE"
+          
+          # 将文件移动到工作区供 Docker 构建使用
+          mv dm8.zip ./dm8.zip
+          
+          # 输出给后续步骤使用
+          echo "DM_SHA256=$HASH_VALUE" >> $GITHUB_ENV
+          echo "DM_URL=$DM_URL" >> $GITHUB_ENV
+
+      # 2. 登录 Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 3. 构建和推送
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:latest
+          # 通过构建参数传入 URL 和 SHA256
+          build-args: |
+            DM_DOWNLOAD_URL=${{ env.DM_URL }}
+            DM_EXPECTED_SHA256=${{ env.DM_SHA256 }}
