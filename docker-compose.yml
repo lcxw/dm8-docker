@@ -17,7 +17,8 @@ services:
       #      - LD_LIBRARY_PATH=C:/Program Files/Git/opt/dmdbms/bin
       - LD_LIBRARY_PATH=/opt/dmdbms/bin
       - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      - SYSDBA_PWD=SYSDBA001
+      - SYSDBA_PWD=SYSDBA001.p
+      - SYSAUDITOR_PWD=SYSDBA001.p
       #      - CASE_SENSITIVE=1 #1敏感，0不敏感
       - CASE_SENSITIVE=1 #0不区分大小写，1区分大小写，2将所有表名转换为小写。
       #      - UNICODE_FLAG=0
