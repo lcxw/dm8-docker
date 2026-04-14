@@ -2,9 +2,9 @@
 FROM ubuntu:resolute AS installer
 
 # 安装依赖
-RUN apt-get update && \
-    apt-get install -y libaio1 || apt-get install -y libaio1t64 && \
-    rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && \
+#    apt-get install -y libaio1 || apt-get install -y libaio1t64 && \
+#    rm -rf /var/lib/apt/lists/*
 
 # 创建用户
 RUN groupadd dinstall -g 2001 && \
