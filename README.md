@@ -1,20 +1,21 @@
-docker for dm8
-===
+# docker for dm8
 
-1. download DMinstall.bin 
+1. download DMinstall.bin
 
 2. build image and run
+
 ```
-docker build . -t dm8:v1
-docker run -d --name dm8 -p 5236:5236 -e SYSDBA_PWD=aA123456 -e SYSAUDITOR_PWD=aA123456 dm8:v1
+docker build . -t dm8:v20250917_293539_x86_64
+docker run -d --name dm8 -p 5236:5236 -e SYSDBA_PWD=aA123456 -e SYSAUDITOR_PWD=aA123456 dm8:v20250917_293539_x86_64
 ```
 
 3. environment variables
+
 ```
 DB_PATH=${DB_PATH:-"/home/dmdba/data"}
-INSTANCE_NAME=${INSTANCE_NAME:-"DMSERVER"} 
+INSTANCE_NAME=${INSTANCE_NAME:-"DMSERVER"}
 DB_NAME=${DB_NAME:-"DAMENG"}
-DMDB_INSTALL_PATH=${DMDB_INSTALL_PATH:-"/home/dmdba/dmdb"}
+DMDB_INSTALL_PATH=${DMDB_INSTALL_PATH:-"/home/dmdba/dmdbms"}
 INIT_PARAMS=""
 PORT_NUM=${PORT_NUM:-"5236"}
 TIME_ZONE=${TIME_ZONE:-"+08:00"}

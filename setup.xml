@@ -9,7 +9,7 @@
 	<!--安装程序组件类型，取值范围：0、1、2，0 表示安装全部，1 表示安装服务器，2 表示安装客户端。缺省为0 -->
 	<INSTALL_TYPE>0</INSTALL_TYPE>
 	<!--安装路径，不允许为空。合法的安装路径允许字符的范围是小写字母(a-z)、大写字母(A-Z)、数字(0-9)、下划线(_)、空格( )和中文 -->
-	<INSTALL_PATH>/home/dmdba/dmdb</INSTALL_PATH>
+	<INSTALL_PATH>/home/dmdba/dmdbms</INSTALL_PATH>
 	<!--是否初始化库，取值范围：Y/N、y/n，不允许为空 -->
 	<INIT_DB>N</INIT_DB>
 	<!--数据库实例参数 -->
