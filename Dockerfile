@@ -6,7 +6,7 @@ RUN groupadd dinstall -g 2001 && \
     yum install sudo -y && yum clean all
 COPY DMInstall.bin /mnt/DMInstall.bin
 COPY setup.xml /tmp/setup.xml
-RUN sudo -u dmdba /mnt/DMInstall.bin -q /tmp/setup.xml
+RUN chmod +x /mnt/DMInstall.bin && sudo -u dmdba /mnt/DMInstall.bin -q /tmp/setup.xml
 
 FROM openeuler/openeuler:22.03 
 RUN groupadd dinstall -g 2001 && \
